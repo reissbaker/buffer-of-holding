@@ -7,6 +7,8 @@ fn main() {
 
     thread::spawn(move|| {
         for byte in io::stdin().bytes() {
+            // TODO: r u freaking kidding me with these unwraps
+            // don't send a byte if the byte read fails duh
             transmitter.send(byte.unwrap()).unwrap();
         }
     });
