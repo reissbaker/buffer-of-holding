@@ -4,8 +4,7 @@ use std::io::{self, Read, Write};
 
 const CHUNK_SIZE: usize = 512;
 
-enum WriteError {
-    EOF,
+enum PipeError {
     HungUp,
 }
 
@@ -14,48 +13,48 @@ fn main() {
 
     // Read stdin forever on a separate thread as fast as possible
     thread::spawn(move|| {
-        read_stdin_forever(&transmitter);
+        // Ignore result and exit thread if we're done reading
+        let _ = read_stdin_forever(&transmitter);
 
-        // hang up if stdin hangs up
+        // Make sure to hang up
         drop(transmitter);
     });
 
-    // This function "fails" when it's done; w/e
+    // If we ever stop writing, we're done; ignore and exit
     let _ = write_stdout_forever(&receiver);
 }
 
-fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) {
+fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), PipeError> {
     let mut bytes: [u8; 512] = [0; CHUNK_SIZE];
 
     loop {
         match io::stdin().read(&mut bytes) {
             // Read signals end-of-input-stream with Ok(0)
-            Ok(0) => return,
+            Ok(0) => return Ok(()),
 
             // Any other number of bytes? send em along
             Ok(_) => {
                 // If we have bytes to send, send them and clear the buffer
-                match transmitter.send(bytes) {
-                    Ok(_) => (),
-
-                    // send() only fails when the receiver hung up; exit if so
-                    Err(_) => return
-                }
+                // Otherwise, the receiver hung up; exit
+                try!(transmitter.send(bytes).map_err(|_| PipeError::HungUp));
                 bytes = [0; CHUNK_SIZE];
             },
 
             // Ignore errors; if there will never be more bytes, it will Ok(0)
             Err(_) => (),
-        }
+        };
     }
 }
 
-fn write_stdout_forever(receiver: &Receiver<[u8; CHUNK_SIZE]>) -> Result<(), WriteError> {
+fn write_stdout_forever(receiver: &Receiver<[u8; CHUNK_SIZE]>) -> Result<(), PipeError> {
     loop {
         // If this fails, stdin hung up; no more data to write
-        let bytes = try!(receiver.recv().map_err(|_| WriteError::EOF));
+        let bytes = match receiver.recv() {
+            Ok(data) => data,
+            Err(_) => return Ok(()),
+        };
 
         // If this fails, stdout hung up; nothing is listening anymore
-        try!(io::stdout().write_all(&bytes).map_err(|_| WriteError::HungUp));
+        try!(io::stdout().write_all(&bytes).map_err(|_| PipeError::HungUp));
     }
 }
