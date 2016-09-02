@@ -2,13 +2,15 @@ use std::thread;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::io::{self, Read, Write};
 
+const CHUNK_SIZE: usize = 512;
+
 enum WriteError {
     EOF,
     HungUp,
 }
 
 fn main() {
-    let (transmitter, receiver) = channel::<[u8; 512]>();
+    let (transmitter, receiver) = channel::<[u8; CHUNK_SIZE]>();
 
     thread::spawn(move|| {
         read_stdin_forever(&transmitter);
@@ -18,8 +20,8 @@ fn main() {
     let _ = write_stdout_forever(&receiver);
 }
 
-fn read_stdin_forever(transmitter: &Sender<[u8; 512]>) {
-    let mut bytes: [u8; 512] = [0; 512];
+fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) {
+    let mut bytes: [u8; 512] = [0; CHUNK_SIZE];
 
     loop {
         let read_bytes = io::stdin().read(&mut bytes);
@@ -31,7 +33,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; 512]>) {
                 }
 
                 let transfer = bytes;
-                bytes = [0; 512];
+                bytes = [0; CHUNK_SIZE];
 
                 transmitter.send(transfer).unwrap();
             },
@@ -42,7 +44,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; 512]>) {
     }
 }
 
-fn write_stdout_forever(receiver: &Receiver<[u8; 512]>) -> Result<(), WriteError> {
+fn write_stdout_forever(receiver: &Receiver<[u8; CHUNK_SIZE]>) -> Result<(), WriteError> {
     loop {
         // If this fails, stdin hung up; no more data to write
         let bytes = try!(receiver.recv().map_err(|_| WriteError::EOF));
