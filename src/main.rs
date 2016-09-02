@@ -4,9 +4,8 @@ use std::io::{self, Read, Write};
 
 const CHUNK_SIZE: usize = 512;
 
-enum PipeError {
-    HungUp,
-}
+enum PipeError { HungUp, }
+type PipeResult = Result<(), PipeError>;
 
 fn main() {
     let (transmitter, receiver) = channel::<[u8; CHUNK_SIZE]>();
@@ -21,7 +20,7 @@ fn main() {
     let _ = write_stdout_forever(&receiver);
 }
 
-fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), PipeError> {
+fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> PipeResult {
     let mut bytes: [u8; CHUNK_SIZE] = [0; CHUNK_SIZE];
 
     loop {
@@ -43,7 +42,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), Pipe
     }
 }
 
-fn write_stdout_forever(receiver: &Receiver<[u8; CHUNK_SIZE]>) -> Result<(), PipeError> {
+fn write_stdout_forever(receiver: &Receiver<[u8; CHUNK_SIZE]>) -> PipeResult {
     loop {
         // If this fails, stdin hung up; no more data to write
         let bytes = match receiver.recv() {
