@@ -15,9 +15,6 @@ fn main() {
     thread::spawn(move|| {
         // Ignore result and exit thread if we're done reading
         let _ = read_stdin_forever(&transmitter);
-
-        // Make sure to hang up before exiting thread
-        drop(transmitter);
     });
 
     // If we ever stop writing, we're done; ignore and exit
