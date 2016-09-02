@@ -16,7 +16,7 @@ fn main() {
         // Ignore result and exit thread if we're done reading
         let _ = read_stdin_forever(&transmitter);
 
-        // Make sure to hang up
+        // Make sure to hang up before exiting thread
         drop(transmitter);
     });
 
@@ -35,7 +35,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), Pipe
             // Any other number of bytes? send em along
             Ok(_) => {
                 // If we have bytes to send, send them and clear the buffer
-                // Otherwise, the receiver hung up; exit
+                // If sending fails, the receiver hung up; exit
                 try!(transmitter.send(bytes).map_err(|_| PipeError::HungUp));
                 bytes = [0; CHUNK_SIZE];
             },
