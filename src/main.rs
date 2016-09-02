@@ -26,7 +26,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), Pipe
 
     loop {
         match io::stdin().read(&mut bytes) {
-            // Read signals end-of-input-stream with Ok(0)
+            // read() signals end-of-input-stream with Ok(0)
             Ok(0) => return Ok(()),
 
             // Any other number of bytes? send em along
