@@ -12,6 +12,7 @@ enum WriteError {
 fn main() {
     let (transmitter, receiver) = channel::<[u8; CHUNK_SIZE]>();
 
+    // Read stdin forever on a separate thread as fast as possible
     thread::spawn(move|| {
         read_stdin_forever(&transmitter);
     });
@@ -35,7 +36,11 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) {
                 let transfer = bytes;
                 bytes = [0; CHUNK_SIZE];
 
-                transmitter.send(transfer).unwrap();
+                // send() only fails when the receiver hung up; ignore
+                match transmitter.send(transfer) {
+                    Ok(_) => (),
+                    Err(_) => return
+                }
             },
 
             // Ignore errors; if there will never be more bytes, it will Ok(0)
