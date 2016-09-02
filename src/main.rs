@@ -25,22 +25,20 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) {
     let mut bytes: [u8; 512] = [0; CHUNK_SIZE];
 
     loop {
-        let read_bytes = io::stdin().read(&mut bytes);
-        match read_bytes {
-            Ok(count) => {
-                // Read signals end-of-input-stream with Ok(0)
-                if count == 0 {
-                    return;
-                }
+        match io::stdin().read(&mut bytes) {
+            // Read signals end-of-input-stream with Ok(0)
+            Ok(0) => return,
 
-                let transfer = bytes;
-                bytes = [0; CHUNK_SIZE];
-
-                // send() only fails when the receiver hung up; exit if so
-                match transmitter.send(transfer) {
+            // Any other number of bytes? send em along
+            Ok(_) => {
+                // If we have bytes to send, send them and clear the buffer
+                match transmitter.send(bytes) {
                     Ok(_) => (),
+
+                    // send() only fails when the receiver hung up; exit if so
                     Err(_) => return
                 }
+                bytes = [0; CHUNK_SIZE];
             },
 
             // Ignore errors; if there will never be more bytes, it will Ok(0)
