@@ -15,6 +15,9 @@ fn main() {
     // Read stdin forever on a separate thread as fast as possible
     thread::spawn(move|| {
         read_stdin_forever(&transmitter);
+
+        // hang up if stdin hangs up
+        drop(transmitter);
     });
 
     // This function "fails" when it's done; w/e
