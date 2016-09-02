@@ -25,7 +25,7 @@ fn main() {
 }
 
 fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) -> Result<(), PipeError> {
-    let mut bytes: [u8; 512] = [0; CHUNK_SIZE];
+    let mut bytes: [u8; CHUNK_SIZE] = [0; CHUNK_SIZE];
 
     loop {
         match io::stdin().read(&mut bytes) {
