@@ -36,7 +36,7 @@ fn read_stdin_forever(transmitter: &Sender<[u8; CHUNK_SIZE]>) {
                 let transfer = bytes;
                 bytes = [0; CHUNK_SIZE];
 
-                // send() only fails when the receiver hung up; ignore
+                // send() only fails when the receiver hung up; exit if so
                 match transmitter.send(transfer) {
                     Ok(_) => (),
                     Err(_) => return
