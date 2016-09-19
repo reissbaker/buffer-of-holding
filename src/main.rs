@@ -3,7 +3,7 @@ use std::sync::mpsc::{channel, Sender, Receiver};
 use std::io::{self, Read, Write};
 
 // The size in bytes that we read per read() call from stdin
-const CHUNK_SIZE: usize = 512;
+const CHUNK_SIZE: usize = 10 * 1024;
 
 enum PipeError { HungUp, }
 type PipeResult = Result<(), PipeError>;
