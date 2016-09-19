@@ -36,7 +36,6 @@ fn read_stdin_forever(transmitter: &Sender<SizedBuffer>) -> PipeResult {
                 // If sending fails, the receiver hung up; exit
                 let sized_buf = (bytes, n);
                 try!(transmitter.send(sized_buf).map_err(|_| PipeError::HungUp));
-                bytes = [0; CHUNK_SIZE];
             },
 
             // Ignore errors; if there will never be more bytes, it will Ok(0)
